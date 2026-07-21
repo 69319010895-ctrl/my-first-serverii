@@ -1,194 +1,50 @@
- // =============================
-// Web Server Node.js
-// =============================
+{
+"name": "my-first-server",
+"version": "1.0.0",
+"scripts": {
+"start": "node server.js"
+},
+"dependencies": {
+"pg": "^8.11.3"
+}
+}
+1. กด Commit changes...
+4.2 แกไขไฟล server.js
+เปดไฟล server.js บน GitHub และกดแกไข (รูปดินสอ)
+ลบโคดเดิมทั้งหมด แลวคัดลอกโคดดานลางนี้ไปวางแทน:
 const http = require('http');
-
-const port = process.env.PORT || 3000;
-
-const server = http.createServer((req, res) => {
-
-    res.statusCode = 200;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-
-    res.end(`
-<!DOCTYPE html>
-<html lang="th">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>Cherry Blossom Server</title>
-
-<style>
-
-*{
-margin:0;
-padding:0;
-box-sizing:border-box;
-}
-
-body{
-overflow:hidden;
-height:100vh;
-display:flex;
-justify-content:center;
-align-items:center;
-background:linear-gradient(to bottom,#ffd6ea,#fff6fb);
-font-family:'Prompt',sans-serif;
-}
-
-/* กล่องข้อความ */
-
-.card{
-position:relative;
-z-index:10;
-background:rgba(255,255,255,.85);
-padding:40px;
-border-radius:25px;
-text-align:center;
-box-shadow:0 10px 30px rgba(0,0,0,.15);
-}
-
-.card h1{
-color:#ff4f9b;
-font-size:36px;
-margin-bottom:15px;
-}
-
-.card p{
-font-size:20px;
-color:#555;
-}
-
-/* พื้น */
-
-.ground{
-position:absolute;
-bottom:0;
-width:100%;
-height:120px;
-background:#ffc7de;
-}
-
-/* ลำต้น */
-
-.trunk{
-position:absolute;
-bottom:120px;
-left:50%;
-transform:translateX(-50%);
-width:35px;
-height:260px;
-background:#7a4d2d;
-border-radius:20px;
-}
-
-/* พุ่มต้นไม้ */
-
-.tree{
-position:absolute;
-bottom:300px;
-left:50%;
-transform:translateX(-50%);
-width:320px;
-height:250px;
-background:#ffb6d9;
-border-radius:50%;
-box-shadow:
--90px 40px 0 #ffc2e2,
-90px 40px 0 #ffc2e2,
-0 -50px 0 #ff9fcd,
--120px -10px 0 #ffd1e8,
-120px -10px 0 #ffd1e8;
-animation:sway 4s ease-in-out infinite;
-}
-
-@keyframes sway{
-0%{transform:translateX(-50%) rotate(0deg);}
-50%{transform:translateX(-50%) rotate(2deg);}
-100%{transform:translateX(-50%) rotate(0deg);}
-}
-
-/* กลีบซากุระ */
-
-.petal{
-position:absolute;
-top:-20px;
-font-size:22px;
-animation:fall linear infinite;
-opacity:.9;
-}
-
-@keyframes fall{
-
-0%{
-transform:translateY(-10vh) rotate(0deg);
-}
-
-100%{
-transform:translateY(120vh) rotate(360deg);
-}
-
-}
-
-</style>
-</head>
-
-<body>
-
-<div class="tree"></div>
-<div class="trunk"></div>
-<div class="ground"></div>
-
-<div class="card">
-<h1>🌸 สวัสดีคั้บ 🌸</h1>
-
-<p>
-นี่คือ Web Server ของ
-<b>ปิ่นนภา ม่อนชิชิ 69319010895</b>
-</p>
-
-<br>
-
-<p>
-เครื่องแม่ข่ายทำงานปกติบนระบบ Railway แล้วคั้บโผมม 💕
-</p>
-
-</div>
-
-<script>
-
-for(let i=0;i<40;i++){
-
-const petal=document.createElement("div");
-
-petal.className="petal";
-
-petal.innerHTML="🌸";
-
-petal.style.left=Math.random()*100+"vw";
-
-petal.style.animationDuration=
-(5+Math.random()*8)+"s";
-
-petal.style.animationDelay=
-Math.random()*6+"s";
-
-petal.style.fontSize=
-(16+Math.random()*18)+"px";
-
-document.body.appendChild(petal);
-
-}
-
-</script>
-
-</body>
-</html>
-
-`);
+// 1. เรียกใชงาน Pool จากไลบรารี pg สําหรับจัดการการเชื่อมตอฐานขอมูล
+const { Pool } = require('pg');
+// 2. ตั้งคาการเชื่อมตอ โดยดึง URL มาจาก Environment Variable ของ Railway
+const pool = new Pool({
+connectionString: process.env.DATABASE_URL,
 });
+const port = process.env.PORT || 3000;
+const server = http.createServer(async (req, res) => {
+res.statusCode = 200;
+res.setHeader('Content-Type', 'text/html; charset=utf-8');
 
+try {
+// 3. ขอเชื่อมตอและสงคําสั่ง SQL ไปดึงขอมูลจากตาราง students
+const client = await pool.connect();
+const result = await client.query('SELECT * FROM students');
+client.release(); // คนืการเชื่อมตอเมื่อใชงานเสร็จ
+// 4. นําขอมูลที่ได(result.rows) มาประกอบเปนตาราง HTML
+let html = `<h1>ฐานขอมูลนักศึกษา (ทดสอบการเชื่อมตอ)</h1>`;
+html += `<table border="1" cellpadding="10">`;
+html += `<tr><th>รหัสนักศึกษา</th><th>ชื่อ-นามสกุล</th></tr>`;
+// วนลูปนําขอมูลแตละแถวมาแสดง
+result.rows.forEach(row => {
+html += `<tr><td>${row.student_id}</td><td>${row.student_name}</td></tr>`;
+});
+html += `</table>`;
+res.end(html);
+} catch (err) {
+// กรณเีชื่อมตอไมไดหรือเขียนชื่อตารางผิด
+console.error(err);
+res.end(`<h1>เกิดขอผิดพลาด!</h1><p>${err.message}</p>`);
+}
+});
 server.listen(port, () => {
-    console.log(`Server is running! เครื่องแม่ข่ายเปิดทำงานแล้วที่ช่องทาง: ${port}`);
+console.log(`Server is running on port: ${port}`);
 });
