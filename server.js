@@ -1,17 +1,3 @@
-{
-"name": "my-first-server",
-"version": "1.0.0",
-"scripts": {
-"start": "node server.js"
-},
-"dependencies": {
-"pg": "^8.11.3"
-}
-}
-1. กด Commit changes...
-4.2 แกไขไฟล server.js
-เปดไฟล server.js บน GitHub และกดแกไข (รูปดินสอ)
-ลบโคดเดิมทั้งหมด แลวคัดลอกโคดดานลางนี้ไปวางแทน:
 const http = require('http');
 // 1. เรียกใชงาน Pool จากไลบรารี pg สําหรับจัดการการเชื่อมตอฐานขอมูล
 const { Pool } = require('pg');
